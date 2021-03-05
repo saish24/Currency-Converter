@@ -35,7 +35,6 @@
         android:gravity="center"
         android:padding="10dp"
         android:text="Convert"
-        android:textAllCaps="true"
         android:textColor="@color/white"
         android:textSize="30sp" />
 
@@ -47,7 +46,6 @@
         android:layout_centerInParent="true"
         android:gravity="center"
         android:padding="10dp"
-        android:text=" a  =  b"
         android:textColor="#616126"
         android:textSize="30sp"
         android:visibility="visible" />
