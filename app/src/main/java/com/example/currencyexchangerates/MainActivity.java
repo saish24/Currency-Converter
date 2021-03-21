@@ -2,9 +2,10 @@ package com.example.currencyexchangerates;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Spinner;
@@ -18,100 +19,96 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner1, spinner2;
     private TextView convert, result;
 
+    public static final String TAG = "Currency Main";
+    private String base = "";
+    private String symbols = "";
+    private Context ctx;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        ctx = this;
         initList();
 
         spinner1 = findViewById(R.id.Currency1);
         spinner2 = findViewById(R.id.Currency2);
 
         SpinnerAdapter mAdapter = new SpinnerAdapter(this, countryList);
+
         spinner1.setAdapter(mAdapter);
         spinner2.setAdapter(mAdapter);
 
-
         spinner1.setDropDownVerticalOffset(160);
-        spinner1.setSelection(12);
-        spinner2.setSelection(5);
-
+        spinner1.setSelection(1);
+        spinner2.setSelection(2);
 
         spinner1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            int x = 0;
-
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Country country = (Country) parent.getItemAtPosition(position);
-                String select = country.getCountryName().substring(country.getCountryName().length()-3) + " selected!";
-                if(x>0)
-                    Toast.makeText(getApplicationContext(), select, Toast.LENGTH_SHORT).show();
-                x = 1;
+                String temp = countryList.get(position).getCountryName();
+                base = temp.substring(temp.length() - 3);
+                Log.v(TAG, base);
+                result.setText("");
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
-
         spinner2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            int x = 0;
-
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Country country = (Country) parent.getItemAtPosition(position);
-                String select = country.getCountryName().substring(country.getCountryName().length()-3) + " selected!";
-                if(x>0)
-                    Toast.makeText(getApplicationContext(), select, Toast.LENGTH_SHORT).show();
-                x = 1;
+                String temp = countryList.get(position).getCountryName();
+                symbols = temp.substring(temp.length() - 3);
+                Log.v(TAG, symbols);
+                result.setText("");
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
-
 
         convert = findViewById(R.id.convert);
         result = findViewById(R.id.result);
 
-        convert.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                convert.setClickable(false);
 
-                Country country = (Country) spinner1.getSelectedItem();
-                Country country2 = (Country) spinner2.getSelectedItem();
-                String makeThisToast =
-                        "Getting current rates for "
-                                + country.getCountryName().substring(country.getCountryName().length()-3)
-                                + " to "
-                                + country2.getCountryName().substring(country2.getCountryName().length()-3);
+        convert.setOnClickListener(v -> {
+            if (checkForNOInternet()) return;
+//            Toast.makeText(getApplicationContext(), "Getting current rates for " + base + " to " + symbols, Toast.LENGTH_SHORT).show();
 
-                Toast.makeText(getApplicationContext(), makeThisToast, Toast.LENGTH_SHORT).show();
+            RatesDataService ratesDataService = new RatesDataService(ctx);
+            convert.setClickable(false);
+            ratesDataService.getConversionRate(base, symbols, new RatesDataService.VolleyResponseListener() {
+                @Override
+                public void onError(String message) {
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                }
 
-                final android.os.Handler handler = new Handler(Looper.getMainLooper());
-                handler.postDelayed(this::allowAccess, 1000);
-            }
-
-            private void allowAccess() {
-                Country country = (Country) spinner1.getSelectedItem();
-                Country country2 = (Country) spinner2.getSelectedItem();
-                String str = "1 " + country.getCountryName().substring(country.getCountryName().length()-3)
-                        + "  =  x " + country2.getCountryName().substring(country2.getCountryName().length()-3);
-                result.setText(str);
-
-
-//                result.setPaintFlags(result.getPaintFlags() |   Paint.UNDERLINE_TEXT_FLAG);
-
-                convert.setClickable(true);
-            }
+                @Override
+                public void onResponse(String value) {
+                    String str = "1 " + base + "  =  " + value + " " + symbols;
+                    Log.v(TAG, str);
+                    result.setText(str);
+                    convert.setClickable(true);
+                }
+            });
         });
-
-
     }
 
-    private void initList(){
+    private boolean checkForNOInternet() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (connectivityManager.getActiveNetworkInfo() == null) {
+            Toast.makeText(getApplicationContext(), "No Internet Connection", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return false;
+    }
+
+    private void initList() {
         countryList = new ArrayList<>();
         countryList.add(new Country(R.drawable.bulgaria, "Bulgarian Lev BGN"));
         countryList.add(new Country(R.drawable.czech, "Czech Koruna CZK"));
@@ -145,6 +142,6 @@ public class MainActivity extends AppCompatActivity {
         countryList.add(new Country(R.drawable.thailand, "Thai Baht THB"));
         countryList.add(new Country(R.drawable.usa, "US Dollar USD"));
         countryList.add(new Country(R.drawable.southafrica, "South African Rand ZAR"));
-
     }
+
 }

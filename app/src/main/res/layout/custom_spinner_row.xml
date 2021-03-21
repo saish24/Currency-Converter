@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:elevation="16dp"
-    android:padding="8dp" >
+    android:padding="8dp"
+    android:layout_margin="8dp" >
 
     <ImageView
         android:id="@+id/Country_Flag"
